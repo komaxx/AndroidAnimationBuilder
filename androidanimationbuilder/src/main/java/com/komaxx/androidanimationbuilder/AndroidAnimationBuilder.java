@@ -2,6 +2,8 @@ package com.komaxx.androidanimationbuilder;
 
 import android.animation.Animator;
 import android.os.Build;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewPropertyAnimator;
@@ -18,7 +20,7 @@ import java.util.ArrayList;
  *
  * Exemplary usage to create a simple wiggle animation
  * <pre>
- *      AnimationBuilder builder = new AnimationBuilder(v);
+ *      AndroidAnimationBuilder builder = new AndroidAnimationBuilder(v);
  *      builder.setDefaultStepLength(60)
  *      .rotateBy(2)
  *      .then().rotateBy(-6)
@@ -159,6 +161,16 @@ public class AndroidAnimationBuilder {
     }
 
     /**
+     * Add some action that is to be executed at the beginning
+     * of the animation step. Called in main thread.
+     */
+    public AndroidAnimationBuilder run(AnimationStepHook toRun){
+        if (alreadyExecuted()) return this;
+        currentStep.setPreStep(toRun);
+        return this;
+    }
+
+    /**
      * Finishes the current animation step definition and starts the next one.
      * Unless given a specific duration it will have the default duration.
      * An empty step will simply appear as a pause. An empty step at the end
@@ -180,6 +192,30 @@ public class AndroidAnimationBuilder {
     }
 
     /**
+     * Set the duration for the current step. If not set, the step will use the
+     * default duration. Values <1 unset any previously set duration.
+     */
+    public AndroidAnimationBuilder ms(int ms) {
+        currentStep.durationMs = ms;
+        return this;
+    }
+
+    /**
+     * Sets multiple values in this step in such a way that all modifications up
+     * to this point are undone (translated back to original position, unscaled,
+     * rotated back to original orientation, alpha = startAlpha).
+     *
+     * May be combined with any other step definition.
+     */
+    public AndroidAnimationBuilder reset() {
+        if (alreadyExecuted()) return this;
+
+        currentStep.setResetting(true);
+
+        return this;
+    }
+
+    /**
      * MUST be the final call to the builder. Compiles the actual animations
      * out of the definitions.
      * All following calls to the build will have no effect;
@@ -198,7 +234,11 @@ public class AndroidAnimationBuilder {
             return;
         }
 
+        // build startState to enable 'reset' and 'undo'
+        View view = viewRef.get();
+        StartState startState = new StartState(view);
 
+        // build final step that reverts layer changes.
         FinalStep finalStep = new FinalStep();
         finalStep.viewRef = viewRef;
         steps.add(finalStep);
@@ -208,10 +248,10 @@ public class AndroidAnimationBuilder {
             AnimationStep step = steps.get(i);
             step.viewRef = viewRef;
             step.nextStep = steps.get(i+1);
+            step.startState = startState;
             step.setDurationIfUnset(defaultStepDurationMS);
         }
 
-        View view = viewRef.get();
         if (view != null && allowLayerAdjustmentForAnimation) {
             finalStep.setEndLayerType(view.getLayerType());
 
@@ -222,30 +262,22 @@ public class AndroidAnimationBuilder {
         steps.get(0).execute();
     }
 
-    /**
-     * Set the duration for the current step. If not set, the step will use the
-     * default duration. Values <1 unset any previously set duration.
-     */
-    public AndroidAnimationBuilder ms(int ms) {
-        currentStep.durationMs = ms;
-        return this;
-    }
-
     static class AnimationStep implements Animator.AnimatorListener {
+        boolean resetting;
+
         Float rotateByDegrees;
 
-        Float translationX;
-        Float translationY;
-        Float translationZ;
+        Float translationX; Float translationY; Float translationZ;
 
-        Float scaleX;
-        Float scaleY;
+        Float scaleX; Float scaleY;
 
         Float alpha;
 
-        Runnable preStep;
+
+        AnimationStepHook preStep;
 
         WeakReference<View> viewRef;
+        StartState startState;
         AnimationStep nextStep;
         int durationMs;
 
@@ -275,12 +307,22 @@ public class AndroidAnimationBuilder {
             this.alpha = alpha;
         }
 
+        void setPreStep(AnimationStepHook toRun){
+            this.preStep = toRun;
+        }
+
+        void setResetting(boolean resetting) {
+            this.resetting = resetting;
+        }
+
+
         /**
          * Decides if the step is at least minimally defined. Empty steps
-         * will simply be ignored.
+         * will simply be a pause - unless it's the final step, then it
+         * will be discarded.
          */
         boolean isEmpty() {
-            return !hasAnimation() && preStep==null;
+            return !hasAnimation() && preStep==null && !resetting;
         }
 
         boolean hasAnimation() {
@@ -290,7 +332,8 @@ public class AndroidAnimationBuilder {
                     || translationZ!=null
                     || scaleX!=null
                     || scaleY!=null
-                    || alpha!=null;
+                    || alpha!=null
+                    || resetting;
         }
 
         void setDurationIfUnset(int ms) {
@@ -305,11 +348,26 @@ public class AndroidAnimationBuilder {
             }
 
             if (preStep != null){
-                preStep.run();
+                preStep.run(view);
             }
 
             if (hasAnimation()){
                 ViewPropertyAnimator animate = view.animate();
+
+                if (resetting){
+                    animate.alpha(startState.alpha);
+
+                    animate.scaleX(startState.scaleX);
+                    animate.scaleY(startState.scaleY);
+
+                    animate.translationX(startState.translationX);
+                    animate.translationY(startState.translationY);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP){
+                        animate.translationZ(startState.translationZ);
+                    }
+
+                    animate.rotation(startState.rotation);
+                }
 
                 if (rotateByDegrees != null) animate.rotationBy(rotateByDegrees);
 
@@ -365,6 +423,7 @@ public class AndroidAnimationBuilder {
         @Override  public void onAnimationStart(Animator animator) {}
         @Override  public void onAnimationCancel(Animator animator) {}
         @Override  public void onAnimationRepeat(Animator animator) {}
+
     }
 
     /**
@@ -389,5 +448,55 @@ public class AndroidAnimationBuilder {
         public void setEndLayerType(int layerType) {
             this.endLayerType = layerType;
         }
+    }
+
+    /**
+     * Encapsulates the state of the view at the beginning of the animation
+     * for later comparison and undoing.
+     */
+    private static class StartState {
+        public final float alpha;
+        public final float scaleX;
+        public final float scaleY;
+        public final float translationX;
+        public final float translationY;
+        public final float translationZ;
+        public final float rotation;
+
+        public StartState(@Nullable View view) {
+            if (view == null){
+                alpha = 0;
+                scaleX = scaleY = 0;
+                translationX = translationY = translationZ = 0;
+                rotation = 0;
+            } else {
+                alpha = view.getAlpha();
+
+                scaleX = view.getScaleX();
+                scaleY = view.getScaleY();
+
+                translationX = view.getTranslationX();
+                translationY = view.getTranslationY();
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP){
+                    translationZ = view.getTranslationZ();
+                } else {
+                    translationZ = 0;
+                }
+
+                rotation = view.getRotation();
+            }
+
+        }
+    }
+
+    /**
+     * Objects implementing this interface can be added to any animation step
+     * to be called when the animation step is triggered.
+     */
+    public interface AnimationStepHook {
+        /**
+         * Run when an animation step is triggered.
+         */
+        void run(@NonNull View view);
     }
 }

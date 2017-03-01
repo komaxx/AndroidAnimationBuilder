@@ -63,7 +63,7 @@ new AndroidAnimationBuilder(v).setDefaultStepDuration(1000)
 ### I don't need it, I can do that with *xml*!
 If the xml is enough for your needs, you should definitely use the xml.
 The AnimationBuilder is supposed to help in complex cases,
-where a sequence of animation steps is run, probably with hooks in between.
+where a sequence of animation steps is required, probably with hooks in between.
 
 ### Huh? Isn't that what *ViewPropertyAnimators* are for?
 Absolutely! The AnimationBuilder internally even uses ViewPropertyAnimators.

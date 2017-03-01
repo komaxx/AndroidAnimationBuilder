@@ -18,15 +18,15 @@ import java.util.ArrayList;
  * along the way.
  * </p>
  *
- * Exemplary usage to create a simple wiggle animation
+ * Exemplary usage to create a simple wiggle animation:
  * <pre>
  *      AndroidAnimationBuilder builder = new AndroidAnimationBuilder(v);
  *      builder.setDefaultStepLength(60)
- *      .rotateBy(2)
- *      .then().rotateBy(-6)
- *      .then().rotateBy(7)
- *      .then().rotateBy(-3).ms(120)
- *      .execute();
+ *             .rotateBy(2)
+ *             .then().rotateBy(-6)
+ *             .then().rotateBy(7)
+ *             .then().rotateBy(-3).ms(120)
+ *             .execute();
  * </pre>
  *
  * @author  Created by Matthias Schicker (KoMaXX) on 28/02/2017.
@@ -171,6 +171,16 @@ public class AndroidAnimationBuilder {
     }
 
     /**
+     * Add some action that is to be executed at the END
+     * of the animation step, after the animation stopped. Called in main thread.
+     */
+    public AndroidAnimationBuilder runAfter(AnimationStepHook toRun){
+        if (alreadyExecuted()) return this;
+        currentStep.setPostStep(toRun);
+        return this;
+    }
+
+    /**
      * Finishes the current animation step definition and starts the next one.
      * Unless given a specific duration it will have the default duration.
      * An empty step will simply appear as a pause. An empty step at the end
@@ -181,6 +191,38 @@ public class AndroidAnimationBuilder {
 
         steps.add(currentStep);
         currentStep = new AnimationStep();
+        return this;
+    }
+
+    /**
+     * Call this to insert a pause between two animation steps.
+     * It is essentially a shortcut for 'then().ms(ms).then()'
+     */
+    public AndroidAnimationBuilder pause(int ms){
+        then();
+        ms(ms);
+        then();
+        return this;
+    }
+
+    /**
+     * Duplicates the current step x times. Afterwards the builder
+     * is in the last copy of the repeated step. You might want
+     * to call 'then' afterwards to get a fresh step ;)
+     *
+     * @param times How often the current step is to be repeated.<br/>
+     *              <=0: Does nothing<br/>
+     *              1: The current step will be executed two times<br/>
+     *              n: The current step will be executed (n+1) times overall
+     */
+    public AndroidAnimationBuilder repeat(int times){
+        if (times <= 0) return this;
+        if (alreadyExecuted()) return this;
+
+        for (int i = 1; i < times; i++){
+            steps.add(new AnimationStep(currentStep));
+        }
+
         return this;
     }
 
@@ -273,13 +315,37 @@ public class AndroidAnimationBuilder {
 
         Float alpha;
 
-
         AnimationStepHook preStep;
+        AnimationStepHook postStep;
 
+        // set at latest when animation is built
+        int durationMs;
+
+        // set when animation is built
         WeakReference<View> viewRef;
         StartState startState;
         AnimationStep nextStep;
-        int durationMs;
+
+
+        public AnimationStep(){ }
+
+        public AnimationStep(AnimationStep from) {
+            this.resetting = from.resetting;
+
+            this.rotateByDegrees = from.rotateByDegrees;
+
+            this.translationX = from.translationX;
+            this.translationY = from.translationY;
+            this.translationZ = from.translationZ;
+
+            this.scaleX = from.scaleX;
+            this.scaleY = from.scaleY;
+
+            this.alpha = from.alpha;
+
+            this.preStep = from.preStep;
+            this.postStep = from.postStep;
+        }
 
 
         void setRotateBy(float degrees) {
@@ -309,6 +375,10 @@ public class AndroidAnimationBuilder {
 
         void setPreStep(AnimationStepHook toRun){
             this.preStep = toRun;
+        }
+
+        public void setPostStep(AnimationStepHook toRun) {
+            this.postStep = toRun;
         }
 
         void setResetting(boolean resetting) {
@@ -408,6 +478,8 @@ public class AndroidAnimationBuilder {
                 return;
             }
 
+            if (postStep != null) postStep.run(view);
+
             view.postDelayed(new Runnable() {
                 @Override public void run() {
                     nextStep.execute();
@@ -423,7 +495,6 @@ public class AndroidAnimationBuilder {
         @Override  public void onAnimationStart(Animator animator) {}
         @Override  public void onAnimationCancel(Animator animator) {}
         @Override  public void onAnimationRepeat(Animator animator) {}
-
     }
 
     /**
@@ -485,7 +556,6 @@ public class AndroidAnimationBuilder {
 
                 rotation = view.getRotation();
             }
-
         }
     }
 
@@ -495,7 +565,9 @@ public class AndroidAnimationBuilder {
      */
     public interface AnimationStepHook {
         /**
-         * Run when an animation step is triggered.
+         * Run when an animation step is triggered. Only called when the view
+         * was not previously cleaned up as the AnimationBuilder does *not* retain
+         * the view (-> memory)
          */
         void run(@NonNull View view);
     }

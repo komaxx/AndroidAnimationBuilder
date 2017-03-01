@@ -3,12 +3,16 @@ package com.komaxx.animationbuilderdemo;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.TextView;
 
 import com.komaxx.androidanimationbuilder.AndroidAnimationBuilder;
+
+import static android.view.View.GONE;
 
 public class MainDemoActivity extends Activity {
     View animatedView;
     View startButton;
+    TextView pauseLabel;
 
 
     @Override
@@ -18,31 +22,73 @@ public class MainDemoActivity extends Activity {
 
         animatedView = findViewById(R.id.animated);
         startButton = findViewById(R.id.btn_start);
+        pauseLabel = (TextView) findViewById(R.id.lbl_pause);
 
-        findViewById(R.id.btn_start).setOnClickListener(v -> runAnimationTest());
+        findViewById(R.id.btn_start).setOnClickListener(v -> runSimpleAnimationTest());
+//        findViewById(R.id.btn_start).setOnClickListener(v -> runComplexAnimationTest());
     }
 
-    private void runAnimationTest() {
+    private void runSimpleAnimationTest() {
+        new AndroidAnimationBuilder(animatedView)
+                .rotateBy(20)
+                .then().rotateBy(-40)
+                .then().reset()
+                .execute();
+    }
+
+    private void runComplexAnimationTest() {
+        // Create the animation builder. The view is only kept as a weak reference
+        // so don't worry about lifecycle. Create whenever.
         AndroidAnimationBuilder builder = new AndroidAnimationBuilder(animatedView);
 
+        // set some ground rules: Every step with no assigned duration now takes 1 second
         builder.setDefaultStepDuration(1000)
+
+                // first step: quick preparations.
                 .alpha(0).ms(10).run(view -> startButton.setEnabled(false))
+
+                // dramatic entrance: Appear spinning
                 .then().alpha(1).rotateBy(-90)
 
-                // some spinning fun
+                // some more spinning fun. All those steps will take 1 second each.
                 .then().rotateBy(180)
                 .then().rotateBy(-285 -360)
                 .then().rotateBy(15)
 
+                // some moving fun
+                .then().translateX(-1000).ms(600)
+                // hop out of the screen before moving:
+                // 'run(..)' is executed before the animation of the step is started
                 .then().run(view -> view.setTranslationX(1500)).translateX(-1500)
-                .then().translateX(100).ms(100)
+                .then().translateX(0).ms(100)
 
-                .then().translateY(-100).scaleX(3f).ms(500)
-                .then().run(view -> view.setBackgroundColor(randomColor()))
-                .then().scaleX(0).scaleY(0).ms(1000)
+                // phew. Let's have a break
+                // show the pause while we're having it!
+                .runAfter(view -> {
+                    // AndroidAnimationBuilder,,,ception
+                    // For the duration of the pause, be flashy AF
+                    new AndroidAnimationBuilder(pauseLabel)
+                            .setDefaultStepDuration(33)
+                            .run(label -> label.setVisibility(View.VISIBLE))
+                            .then()
+                                .run(label -> ((TextView)label).setTextColor(randomColor()))
+                                .repeat(33)
+                            .runAfter(label -> label.setVisibility(GONE))
+                            .execute();
+                })
+                .pause(1000)
+
+                .translateY(-100).scaleX(2f).ms(500).runAfter(view -> view.setBackgroundColor(randomColor()))
+
+                .then().rotateBy(90).scaleX(1).scaleY(3)
+
+                // finish the show!
+                // reset: Undo everything that is not defined in the step to what it was
+                // before the animation was started.
+                .then().reset().scaleX(0).scaleY(0).ms(2000)
 
                 // everything back to the start
-                .then().reset().run(view -> startButton.setEnabled(true))
+                .then().reset().ms(1).runAfter(view -> startButton.setEnabled(true))
                 .execute();
 
     }

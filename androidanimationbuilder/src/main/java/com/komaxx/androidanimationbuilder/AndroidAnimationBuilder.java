@@ -47,10 +47,10 @@ import java.util.ArrayList;
  * <pre>
  *      AndroidAnimationBuilder builder = new AndroidAnimationBuilder(v);
  *      builder.setDefaultStepLength(60)
- *             .rotateBy(2)
+ *             .rotateTo(2)
  *             .then().rotateBy(-6)
  *             .then().rotateBy(7)
- *             .then().rotateBy(-3).ms(120)
+ *             .then().reset().ms(120)
  *             .execute();
  * </pre>
  *
@@ -72,6 +72,8 @@ public class AndroidAnimationBuilder {
 
     private boolean executionTriggered = false;
 
+    private boolean autoCancelWithTag = true;
+
 
     /**
      * Starting point for all the animation fun. Will take any ol' view.
@@ -92,6 +94,23 @@ public class AndroidAnimationBuilder {
         if (alreadyExecuted()) return this;
 
         defaultStepDurationMS = ms;
+        return this;
+    }
+
+    /**
+     * If this is set true, the running animation steps will automatically
+     * realize that another AnimationBuilder animation was assigned
+     * to the view and cancel itself.
+     * <br/>
+     * <b>Note</b>: This sets the view's tag. Do not use when you need the
+     * tag yourself!
+     * <br/>
+     * Defaults to {@code true}
+     */
+    public AndroidAnimationBuilder setAutoCancelWithTag(boolean autoCancelWithTag) {
+        if (alreadyExecuted()) return this;
+
+        this.autoCancelWithTag = autoCancelWithTag;
         return this;
     }
 
@@ -329,11 +348,18 @@ public class AndroidAnimationBuilder {
         finalStep.viewRef = viewRef;
         steps.add(finalStep);
 
+        String tag = null;
+        if (view != null && autoCancelWithTag){
+            tag = this.toString();
+            view.setTag(tag);
+        }
+
         // build chain out of animation steps. Set defaults if not done yet
         for (int i = 0; i < steps.size()-1; i++){
             AnimationStep step = steps.get(i);
             step.viewRef = viewRef;
             step.nextStep = steps.get(i+1);
+            step.referencingTag = tag;
             step.startState = startState;
             step.setDurationIfUnset(defaultStepDurationMS);
         }
@@ -373,6 +399,11 @@ public class AndroidAnimationBuilder {
         WeakReference<View> viewRef;
         StartState startState;
         AnimationStep nextStep;
+        /**
+         * Used for automatic animation abortion when another AnimationBuilder is
+         * executed on the same view.
+         */
+        String referencingTag;
 
 
         public AnimationStep(){ }
@@ -467,6 +498,11 @@ public class AndroidAnimationBuilder {
             View view = viewRef.get();
             if (view == null){
                 Log.w("AndroidAnimationBuilder", "Aborting animation step: View was cleaned up");
+                return;
+            }
+
+            if (referencingTag!=null && view.getTag() != referencingTag){
+                Log.w("AnimationBuilder", "Aborting animation step: View tag has changed!");
                 return;
             }
 

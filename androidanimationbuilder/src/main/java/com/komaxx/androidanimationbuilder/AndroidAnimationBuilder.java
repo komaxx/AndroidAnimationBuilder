@@ -547,7 +547,11 @@ public class AndroidAnimationBuilder {
         }
 
         @Override  public void onAnimationStart(Animator animator) {}
-        @Override  public void onAnimationCancel(Animator animator) {}
+        @Override  public void onAnimationCancel(Animator animator) {
+            if (DEBUG_LOGGING){
+                Log.i("AndroidAnimationBuilder", "Canceled. No further animations will be executed.");
+            }
+        }
         @Override  public void onAnimationRepeat(Animator animator) {}
     }
 

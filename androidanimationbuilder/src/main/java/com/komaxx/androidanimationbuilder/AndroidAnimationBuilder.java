@@ -351,17 +351,20 @@ public class AndroidAnimationBuilder {
     static class AnimationStep implements Animator.AnimatorListener {
         boolean resetting;
 
-        Float rotateByDegrees;
-        Float rotateToDegrees;
+        @Nullable Float rotateByDegrees;
+        @Nullable Float rotateToDegrees;
 
-        Float translationX; Float translationY; Float translationZ;
+        @Nullable Float translationX;
+        @Nullable Float translationY;
+        @Nullable Float translationZ;
 
-        Float scaleX; Float scaleY;
+        @Nullable Float scaleX;
+        @Nullable Float scaleY;
 
-        Float alpha;
+        @Nullable Float alpha;
 
-        AnimationStepHook preStep;
-        AnimationStepHook postStep;
+        @Nullable AnimationStepHook preStep;
+        @Nullable AnimationStepHook postStep;
 
         // set at latest when animation is built
         int durationMs;
@@ -422,11 +425,11 @@ public class AndroidAnimationBuilder {
             this.alpha = alpha;
         }
 
-        void setPreStep(AnimationStepHook toRun){
+        void setPreStep(@Nullable AnimationStepHook toRun){
             this.preStep = toRun;
         }
 
-        public void setPostStep(AnimationStepHook toRun) {
+        public void setPostStep(@Nullable AnimationStepHook toRun) {
             this.postStep = toRun;
         }
 

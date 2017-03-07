@@ -1,4 +1,4 @@
-/**
+/*
  MIT license, do whatever
 
  Copyright (c) 2017 Matthias Schicker
@@ -109,12 +109,31 @@ public class AndroidAnimationBuilder {
 
     /**
      * Add a rotation animation to the current step. Will replace previously
-     * set rotation animations for the current step.
+     * set rotationBy definitions for the current step.
+     * <br/><br/>
+     * <b>NOTE</b>: Rotations defined as rotateTo have precedence over
+     * rotateBy definitions. If both are defined, ONLY the rotateTo will
+     * be executed.
      */
     public AndroidAnimationBuilder rotateBy(float degrees) {
         if (alreadyExecuted()) return this;
 
         currentStep.setRotateBy(degrees);
+        return this;
+    }
+
+    /**
+     * Add a rotation animation to the current step. Will replace previously
+     * set rotationTo definitions for the current step.
+     * <br/><br/>
+     * <b>NOTE</b>: Rotations defined as rotateTo have precedence over
+     * rotateBy definitions. If both are defined, ONLY the rotateTo will
+     * be executed.
+     */
+    public AndroidAnimationBuilder rotateTo(float degrees) {
+        if (alreadyExecuted()) return this;
+
+        currentStep.setRotateTo(degrees);
         return this;
     }
 
@@ -333,6 +352,7 @@ public class AndroidAnimationBuilder {
         boolean resetting;
 
         Float rotateByDegrees;
+        Float rotateToDegrees;
 
         Float translationX; Float translationY; Float translationZ;
 
@@ -358,6 +378,7 @@ public class AndroidAnimationBuilder {
             this.resetting = from.resetting;
 
             this.rotateByDegrees = from.rotateByDegrees;
+            this.rotateToDegrees = from.rotateToDegrees;
 
             this.translationX = from.translationX;
             this.translationY = from.translationY;
@@ -373,6 +394,9 @@ public class AndroidAnimationBuilder {
         }
 
 
+        public void setRotateTo(Float rotateToDegrees) {
+            this.rotateToDegrees = rotateToDegrees;
+        }
         void setRotateBy(float degrees) {
             rotateByDegrees = degrees;
         }
@@ -422,6 +446,7 @@ public class AndroidAnimationBuilder {
 
         boolean hasAnimation() {
             return     rotateByDegrees!=null
+                    || rotateToDegrees!=null
                     || translationX!=null
                     || translationY!=null
                     || translationZ!=null
@@ -464,7 +489,11 @@ public class AndroidAnimationBuilder {
                     animate.rotation(startState.rotation);
                 }
 
-                if (rotateByDegrees != null) animate.rotationBy(rotateByDegrees);
+                if (rotateToDegrees != null){
+                    animate.rotation(rotateToDegrees);
+                } else if (rotateByDegrees != null){
+                    animate.rotationBy(rotateByDegrees);
+                }
 
                 if (translationX != null) animate.translationX(translationX);
                 if (translationY != null) animate.translationY(translationY);

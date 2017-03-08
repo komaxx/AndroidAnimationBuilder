@@ -1,4 +1,4 @@
-/**
+/*
  MIT license, do whatever
 
  Copyright (c) 2017 Matthias Schicker
@@ -49,8 +49,8 @@ public class MainDemoActivity extends Activity {
         startButton = findViewById(R.id.btn_start);
         pauseLabel = (TextView) findViewById(R.id.lbl_pause);
 
-        findViewById(R.id.btn_start).setOnClickListener(v -> runSimpleAnimationTest());
-//        findViewById(R.id.btn_start).setOnClickListener(v -> runComplexAnimationTest());
+//        findViewById(R.id.btn_start).setOnClickListener(v -> runSimpleAnimationTest());
+        findViewById(R.id.btn_start).setOnClickListener(v -> runComplexAnimationTest());
     }
 
     private void runSimpleAnimationTest() {
@@ -70,7 +70,7 @@ public class MainDemoActivity extends Activity {
         builder.setDefaultStepDuration(1000)
 
                 // first step: quick preparations.
-                .alpha(0).ms(10).run(view -> startButton.setEnabled(false))
+                .alpha(0).ms(10).run(unused -> startButton.setEnabled(false))
 
                 // dramatic entrance: Appear spinning
                 .then().alpha(1).rotateBy(-90)
@@ -113,7 +113,7 @@ public class MainDemoActivity extends Activity {
                 .then().reset().scaleX(0).scaleY(0).ms(2000)
 
                 // everything back to the start
-                .then().reset().ms(1).runAfter(view -> startButton.setEnabled(true))
+                .then().reset().ms(1).runAfter(unused -> startButton.setEnabled(true))
                 .execute();
 
     }

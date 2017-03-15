@@ -32,6 +32,9 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewPropertyAnimator;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.Interpolator;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -321,6 +324,30 @@ public class AndroidAnimationBuilder {
     }
 
     /**
+     * Assigns a deceleration interpolator to the animation step, replacing any
+     * previously defined interpolators.
+     * <br/>
+     * <b>Default</b> interpolator: EaseInEaseOut
+     */
+    public AndroidAnimationBuilder decelerate() {
+        if (alreadyExecuted()) return this;
+        currentStep.setInterpolator(new DecelerateInterpolator());
+        return this;
+    }
+
+    /**
+     * Assigns an acceleration interpolator to the animation step, replacing any
+     * previously defined interpolators.
+     * <br/>
+     * <b>Default</b> interpolator: AccelerateDecelerate
+     */
+    public AndroidAnimationBuilder accelerate() {
+        if (alreadyExecuted()) return this;
+        currentStep.setInterpolator(new AccelerateInterpolator());
+        return this;
+    }
+
+    /**
      * MUST be the final call to the builder. Compiles the actual animations
      * out of the definitions.
      * All following calls to the build will have no effect;
@@ -392,6 +419,12 @@ public class AndroidAnimationBuilder {
         @Nullable AnimationStepHook preStep;
         @Nullable AnimationStepHook postStep;
 
+        /**
+         * Change the interpolation behavior. Only affects actual animations.
+         * Optional, defaults to EaseInEaseOut.
+         */
+        @Nullable Interpolator interpolator;
+
         // set at latest when animation is built
         int durationMs;
 
@@ -425,6 +458,8 @@ public class AndroidAnimationBuilder {
 
             this.preStep = from.preStep;
             this.postStep = from.postStep;
+
+            this.interpolator = from.interpolator;
         }
 
 
@@ -466,6 +501,10 @@ public class AndroidAnimationBuilder {
 
         void setResetting(boolean resetting) {
             this.resetting = resetting;
+        }
+
+        public void setInterpolator(@Nullable Interpolator interpolator) {
+            this.interpolator = interpolator;
         }
 
 
@@ -546,7 +585,10 @@ public class AndroidAnimationBuilder {
 
                 if (alpha != null) animate.alpha(alpha);
 
+                if (interpolator != null) animate.setInterpolator(interpolator);
+
                 // add other animation types here.
+
                 animate.setDuration(durationMs);
                 animate.setListener(this);
                 animate.start();

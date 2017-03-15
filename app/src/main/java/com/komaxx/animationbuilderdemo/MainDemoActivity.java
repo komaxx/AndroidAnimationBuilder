@@ -110,7 +110,7 @@ public class MainDemoActivity extends Activity {
                 // finish the show!
                 // reset: Undo everything that is not defined in the step to what it was
                 // before the animation was started.
-                .then().reset().scaleX(0).scaleY(0).ms(2000)
+                .then().reset().scaleX(0).scaleY(0).ms(2000).decelerate()
 
                 // everything back to the start
                 .then().reset().ms(1).runAfter(unused -> startButton.setEnabled(true))

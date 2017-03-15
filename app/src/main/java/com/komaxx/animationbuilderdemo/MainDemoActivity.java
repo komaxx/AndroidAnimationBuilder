@@ -105,12 +105,12 @@ public class MainDemoActivity extends Activity {
 
                 .translateY(-100).scaleX(2f).ms(500).runAfter(view -> view.setBackgroundColor(randomColor()))
 
-                .then().rotateBy(90).scaleX(1).scaleY(3)
+                .then().rotateBy(90).scaleX(1).scaleY(3).decelerate()
 
                 // finish the show!
                 // reset: Undo everything that is not defined in the step to what it was
                 // before the animation was started.
-                .then().reset().scaleX(0).scaleY(0).ms(2000).decelerate()
+                .then().reset().scaleX(0).scaleY(0).ms(2000).accelerate()
 
                 // everything back to the start
                 .then().reset().ms(1).runAfter(unused -> startButton.setEnabled(true))

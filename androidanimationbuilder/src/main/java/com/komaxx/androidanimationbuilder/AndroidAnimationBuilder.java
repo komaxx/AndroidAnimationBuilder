@@ -32,6 +32,7 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewPropertyAnimator;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
@@ -586,6 +587,7 @@ public class AndroidAnimationBuilder {
                 if (alpha != null) animate.alpha(alpha);
 
                 if (interpolator != null) animate.setInterpolator(interpolator);
+                else animate.setInterpolator(new AccelerateDecelerateInterpolator());
 
                 // add other animation types here.
 

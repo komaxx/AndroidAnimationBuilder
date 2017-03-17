@@ -113,7 +113,7 @@ public class MainDemoActivity extends Activity {
                 .then().reset().scaleX(0).scaleY(0).ms(2000).accelerate()
 
                 // everything back to the start
-                .then().reset().ms(1).runAfter(unused -> startButton.setEnabled(true))
+                .then().ms(1).run(AndroidAnimationBuilder.CLEAN).runAfter(unused -> startButton.setEnabled(true))
                 .execute();
 
     }

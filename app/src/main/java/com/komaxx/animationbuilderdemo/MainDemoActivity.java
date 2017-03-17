@@ -54,7 +54,7 @@ public class MainDemoActivity extends Activity {
     }
 
     private void runSimpleAnimationTest() {
-        new AndroidAnimationBuilder(animatedView)
+        new AndroidAnimationBuilder(animatedView).startClean(true)
                 .rotateBy(20)
                 .then().rotateBy(-40)
                 .then().reset()

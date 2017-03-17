@@ -68,6 +68,7 @@ public class AndroidAnimationBuilder {
 
     private boolean allowLayerAdjustmentForAnimation = true;
     private int defaultStepDurationMS = 300;
+    private boolean startClean = false;
 
     private final ArrayList<AnimationStep> steps = new ArrayList<>();
 
@@ -98,6 +99,22 @@ public class AndroidAnimationBuilder {
         if (alreadyExecuted()) return this;
 
         defaultStepDurationMS = ms;
+        return this;
+    }
+
+    /**
+     * Pre-executes a CLEAN step before starting any animations.
+     * Applied before calculating the state to return to when running
+     * a 'reset' step, so 'reset' will always run to the CLEAN step for
+     * sure. <br/>
+     * Valuable when an animation is triggered by user action on a view
+     * that is already animating. Will ensure that the new animation
+     * simply replaces the old one - instead of piling on.
+     */
+    public AndroidAnimationBuilder startClean(boolean startClean){
+        if (alreadyExecuted()) return this;
+
+        this.startClean = startClean;
         return this;
     }
 
@@ -367,8 +384,12 @@ public class AndroidAnimationBuilder {
             return;
         }
 
-        // build startState to enable 'reset' and 'undo'
         View view = viewRef.get();
+        if (view != null && startClean){
+            CLEAN.run(view);
+        }
+
+        // build startState to enable 'reset'
         StartState startState = new StartState(view);
 
         // build final step that reverts layer changes.

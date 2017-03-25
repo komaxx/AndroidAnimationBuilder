@@ -73,7 +73,7 @@ public class AndroidAnimationBuilder {
     private final ArrayList<AnimationStep> steps = new ArrayList<>();
 
     // not yet added to steps!
-    private AnimationStep currentStep = new AnimationStep();
+    private @NonNull AnimationStep currentStep = new AnimationStep();
 
     private boolean executionTriggered = false;
 
@@ -280,10 +280,18 @@ public class AndroidAnimationBuilder {
 
     /**
      * Call this to insert a pause between two animation steps.
-     * It is essentially a shortcut for 'then().ms(ms).then()'
+     * Do NOT call then() afterwards as that will be done for you.
+     *
+     * NOTE: If the current step is empty, it will *NOT* be finished
+     * beforehand but simply assigned the ms as duration and then finished.
+     *
+     * This is to avoid undesired behavior in form of an unexpectedly longer
+     * pause when calling [..].then().pause()
      */
     public AndroidAnimationBuilder pause(int ms){
-        then();
+        if (!currentStep.isEmpty()){
+            then();
+        }
         ms(ms);
         then();
         return this;

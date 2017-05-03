@@ -468,6 +468,11 @@ public class AndroidAnimationBuilder {
          */
         String referencingTag;
 
+        /**
+         * Some old devices will call onAnimationEnd more than once! This field
+         * ensures that post-steps and further steps will be run only once.
+         */
+        boolean stepAlreadyFinished = false;
 
         public AnimationStep(){ }
 
@@ -636,6 +641,14 @@ public class AndroidAnimationBuilder {
          * Called when the step was finished.
          */
         private void stepFinished() {
+            if (stepAlreadyFinished){
+                if (DEBUG_LOGGING) {
+                    Log.i("AndroidAnimationBuilder", "NOT re-notifying step end: Already ended!");
+                }
+                return;
+            }
+            stepAlreadyFinished = true;
+
             View view = viewRef.get();
             if (view == null){
                 if (DEBUG_LOGGING){

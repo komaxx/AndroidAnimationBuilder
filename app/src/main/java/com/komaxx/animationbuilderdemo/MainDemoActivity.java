@@ -88,7 +88,7 @@ public class MainDemoActivity extends Activity {
                 .then().translateX(0).ms(100)
 
                 // phew. Let's have a break
-                // show the pause while we're having it!
+                // show 'pause' while we're having it!
                 .runAfter(view -> {
                     // AndroidAnimationBuilder,,,ception
                     // For the duration of the pause, be flashy AF
@@ -108,7 +108,7 @@ public class MainDemoActivity extends Activity {
                 .then().rotateBy(90).scaleX(1).scaleY(3).decelerate()
 
                 // finish the show!
-                // reset: Undo everything that is not defined in the step to what it was
+                // reset: Undo everything (unless explicitly defined in the step) to what it was
                 // before the animation was started.
                 .then().reset().scaleX(0).scaleY(0).ms(2000).accelerate()
 

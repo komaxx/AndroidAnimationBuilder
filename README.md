@@ -97,5 +97,6 @@ SOFTWARE.
 
 # Gradle?
 
-Sorry, not yet. For now, just copy&paste AndroidAnimationBuilder.java to your project and you're good.
-Will probably add gradle support if someone requests it.
+~~Sorry, not yet. For now, just copy&paste AndroidAnimationBuilder.java to your project and you're good.
+Will probably add gradle support if someone requests it.~~
+Working on it :)

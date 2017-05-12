@@ -245,6 +245,36 @@ public class AndroidAnimationBuilder {
     }
 
     /**
+     * <p>
+     * Overwrites all previous set step definitions for translation,
+     * rotation, scaling and alpha.
+     * </p>
+     * <p>
+     * A meta definition that animates towards a 'clean' state,
+     * i.e., a state with no scaling, no translation, no rotation,
+     * and an alpha value of 1. If not all of those resets are
+     * desired, overwrite them afterwards for this animation step.
+     * </p>
+     * <p>
+     * Also see the predefined {@link AnimationStepHook} {@code CLEAN}
+     * that does basically the same thing in a single step (not animated)
+     * </p>
+     */
+    public AndroidAnimationBuilder clean(){
+        if (alreadyExecuted()) return this;
+
+        currentStep.setAlpha(1);
+        currentStep.setRotateTo(0f);
+        currentStep.setScaleX(1);
+        currentStep.setScaleY(1);
+        currentStep.setTranslateX(0);
+        currentStep.setTranslateY(0);
+        currentStep.setTranslateZ(0);
+
+        return this;
+    }
+
+    /**
      * Add some action that is to be executed at the beginning
      * of the animation step. Called in main thread.
      */

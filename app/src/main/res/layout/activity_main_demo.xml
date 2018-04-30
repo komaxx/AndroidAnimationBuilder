@@ -35,4 +35,6 @@
         android:layout_centerHorizontal="true"
         android:text="START"
         tools:ignore="HardcodedText"/>
+
+    
 </RelativeLayout>

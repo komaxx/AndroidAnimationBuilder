@@ -503,6 +503,11 @@ public class AndroidAnimationBuilder {
          * ensures that post-steps and further steps will be run only once.
          */
         boolean stepAlreadyFinished = false;
+        /**
+         * Used to remember that an animation was canceled and abort in
+         * onAnimationEnded.
+         */
+        boolean canceled = false;
 
         public AnimationStep(){ }
 
@@ -601,12 +606,12 @@ public class AndroidAnimationBuilder {
         void execute() {
             View view = viewRef.get();
             if (view == null){
-                Log.w("AndroidAnimationBuilder", "Aborting animation step: View was cleaned up");
+                Log.i("AndroidAnimationBuilder", "Aborting animation step: View was cleaned up");
                 return;
             }
 
             if (referencingTag!=null && view.getTag() != referencingTag){
-                Log.w("AnimationBuilder", "Aborting animation step: View tag has changed!");
+                Log.i("AnimationBuilder", "Aborting animation step: View tag has changed!");
                 return;
             }
 
@@ -671,6 +676,13 @@ public class AndroidAnimationBuilder {
          * Called when the step was finished.
          */
         private void stepFinished() {
+            if (canceled){
+                if (DEBUG_LOGGING) {
+                    Log.i("AndroidAnimationBuilder", "NOT processing step end: Already canceled!");
+                }
+                return;
+            }
+
             if (stepAlreadyFinished){
                 if (DEBUG_LOGGING) {
                     Log.i("AndroidAnimationBuilder", "NOT re-notifying step end: Already ended!");
@@ -703,6 +715,7 @@ public class AndroidAnimationBuilder {
 
         @Override  public void onAnimationStart(Animator animator) {}
         @Override  public void onAnimationCancel(Animator animator) {
+            canceled = true;
             if (DEBUG_LOGGING){
                 Log.i("AndroidAnimationBuilder", "Canceled. No further animations will be executed.");
             }
